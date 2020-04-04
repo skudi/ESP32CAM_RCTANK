@@ -10,7 +10,10 @@ int noStop = 0;
 #include "img_converters.h"
 #include "Arduino.h"
 
-#include "dl_lib.h"
+#include "fb_gfx.h"
+#include "fd_forward.h"
+#include "fr_forward.h"
+#include "analogWrite.h"
 
 typedef struct {
         httpd_req_t *req;

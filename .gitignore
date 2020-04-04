@@ -1,0 +1,3 @@
+*.swp
+.pio
+include/App.hpp
