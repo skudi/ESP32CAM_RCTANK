@@ -105,7 +105,6 @@ static esp_err_t capture_handler(httpd_req_t *req){
         return ESP_FAIL;
     }
 
-    int64_t fr_end = esp_timer_get_time();
     return res;
 }
 
@@ -115,7 +114,6 @@ static esp_err_t stream_handler(httpd_req_t *req){
     size_t _jpg_buf_len = 0;
     uint8_t * _jpg_buf = NULL;
     char * part_buf[64];
-    dl_matrix3du_t *image_matrix = NULL;
 
     static int64_t last_frame = 0;
     if(!last_frame) {

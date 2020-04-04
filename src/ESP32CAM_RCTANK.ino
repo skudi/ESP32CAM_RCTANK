@@ -151,5 +151,5 @@ void setup()
 void loop() {
   // put your main code here, to run repeatedly:
   delay(1000);
-  Serial.printf("RSSi: %ld dBm\n",WiFi.RSSI()); 
+  Serial.printf("RSSi: %d dBm\n",WiFi.RSSI()); 
 }
