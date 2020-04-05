@@ -9,34 +9,35 @@ ESP32-CAM Remote Control
 #include "soc/rtc_cntl_reg.h"
 #include "App.hpp"
 #include "camera_pins.h"
+#include "tank_pins.h"
 
 const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASS;
 
 void startCameraServer();
 
-const int MotPin0 = 12;  
-const int MotPin1 = 13;  
-const int MotPin2 = 14;  
-const int MotPin3 = 15;  
-
 void initMotors() 
 {
-  ledcSetup(3, 2000, 8); // 2000 hz PWM, 8-bit resolution
-  ledcSetup(4, 2000, 8); // 2000 hz PWM, 8-bit resolution
-  ledcSetup(5, 2000, 8); // 2000 hz PWM, 8-bit resolution
-  ledcSetup(6, 2000, 8); // 2000 hz PWM, 8-bit resolution
-  ledcAttachPin(MotPin0, 3); 
-  ledcAttachPin(MotPin1, 4); 
-  ledcAttachPin(MotPin2, 5); 
-  ledcAttachPin(MotPin3, 6); 
+  ledcSetup(MotPWM0, 2000, 8); // 2000 hz PWM, 8-bit resolution
+  ledcSetup(MotPWM1, 2000, 8); // 2000 hz PWM, 8-bit resolution
+  ledcSetup(MotPWM2, 2000, 8); // 2000 hz PWM, 8-bit resolution
+  ledcSetup(MotPWM3, 2000, 8); // 2000 hz PWM, 8-bit resolution
+  ledcAttachPin(MotPin0, MotPWM0); 
+  ledcAttachPin(MotPin1, MotPWM1); 
+  ledcAttachPin(MotPin2, MotPWM2); 
+  ledcAttachPin(MotPin3, MotPWM3); 
 }
 
-const int ServoPin = 2;  
+void initFlashLight() 
+{
+  ledcSetup(FlashPWM, 5000, 8);
+  ledcAttachPin(FlashPin, FlashPWM);  //pin4 is LED
+}
+
 void initServo() 
 {
-  ledcSetup(8, 50, 16); // 50 hz PWM, 16-bit resolution, range from 3250 to 6500.
-  ledcAttachPin(ServoPin, 8); 
+  ledcSetup(ServoPWM, 50, 16); // 50 hz PWM, 16-bit resolution, range from 3250 to 6500.
+  ledcAttachPin(ServoPin, ServoPWM); 
 }
 
 void setup() 
@@ -95,12 +96,9 @@ void setup()
   // Remote Control Car
   initMotors();
   initServo();
-  
-  ledcSetup(7, 5000, 8);
-  ledcAttachPin(4, 7);  //pin4 is LED
+	initFlashLight();
   
   Serial.println("ssid: " + (String)ssid);
-  Serial.println("password: " + (String)password);
   
   WiFi.begin(ssid, password);
   delay(500);
@@ -141,9 +139,9 @@ void setup()
 
   for (int i=0;i<5;i++) 
   {
-    ledcWrite(7,10);  // flash led
+    ledcWrite(FlashPWM,10);  // flash led
     delay(200);
-    ledcWrite(7,0);
+    ledcWrite(FlashPWM,0);
     delay(200);    
   }       
 }
