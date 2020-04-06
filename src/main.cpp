@@ -1,3 +1,4 @@
+#include <Arduino.h>
 /*
 ESP32-CAM Remote Control 
 */
@@ -11,8 +12,27 @@ ESP32-CAM Remote Control
 #include "camera_pins.h"
 #include "tank_pins.h"
 
+#ifdef DEBUG
+#define DEBUGOUT(msg) Serial.print(msg)
+#define DEBUGNUM(num, base) Serial.print(num, base)
+#else
+#define DEBUGOUT(msg)
+#define DEBUGNUM(num, base)
+#endif
+
 const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASS;
+
+#define INPINCNT sizeof(inPinNo)/sizeof(inPinNo[0])
+uint8_t inPinNo[] = {MotInLPin, MotInRPin};
+int16_t inPulseTime[INPINCNT]; //length of the throttle pulse [us], -1 = invalid
+unsigned long inPulseStart[INPINCNT]; //begin of pulse micros()
+uint8_t inPinVal[INPINCNT];
+
+int16_t servoPulseMin=1000;
+int16_t servoPulseMax=2000;
+int16_t servoDeadZone=50;
+int16_t servoTrim[INPINCNT]; //pulse time for neutral position
 
 void startCameraServer();
 
@@ -38,6 +58,12 @@ void initServo()
 {
   ledcSetup(ServoPWM, 50, 16); // 50 hz PWM, 16-bit resolution, range from 3250 to 6500.
   ledcAttachPin(ServoPin, ServoPWM); 
+}
+
+void initInputs()
+{
+	pinMode(MotInLPin, INPUT);
+	pinMode(MotInRPin, INPUT);
 }
 
 void setup() 
@@ -97,6 +123,14 @@ void setup()
   initMotors();
   initServo();
 	initFlashLight();
+
+	for (uint8_t pinIdx=0; pinIdx<INPINCNT; pinIdx++) {
+		pinMode(inPinNo[pinIdx], INPUT);
+		inPinVal[pinIdx] = digitalRead(inPinNo[pinIdx]);
+		inPulseTime[pinIdx] = -1;
+		inPulseStart[pinIdx] = 0;
+		servoTrim[pinIdx] = (servoPulseMax + servoPulseMin)/2;
+	}
   
   Serial.println("ssid: " + (String)ssid);
   
@@ -146,8 +180,62 @@ void setup()
   }       
 }
 
+unsigned long nowus = 0;
+
 void loop() {
-  // put your main code here, to run repeatedly:
-  delay(1000);
-  Serial.printf("RSSi: %d dBm\n",WiFi.RSSI()); 
+	nowus = micros();
+	for (uint8_t pinIdx=0; pinIdx<INPINCNT; pinIdx++) {
+		uint8_t newPinVal = digitalRead(inPinNo[pinIdx]);
+		if (newPinVal == HIGH) {
+			if (inPinVal[pinIdx] == LOW) {
+				//Low to High transition
+				inPulseStart[pinIdx] = nowus;
+				DEBUGOUT("\n");
+				DEBUGOUT(pinIdx);
+				DEBUGOUT(" . ");
+				DEBUGOUT(inPulseStart[pinIdx]);
+			}
+		} else {
+			if (inPinVal[pinIdx] == HIGH) {
+				//High to Low transition
+				inPulseTime[pinIdx] = nowus - inPulseStart[pinIdx];
+				DEBUGOUT("\n");
+				DEBUGOUT(pinIdx);
+				DEBUGOUT(" _ ");
+				DEBUGOUT(nowus);
+				DEBUGOUT(" ");
+				DEBUGOUT(inPulseTime[pinIdx]);
+				inPulseStart[pinIdx] = nowus;
+				//DEBUGOUT("-");
+				//DEBUGOUT(servoTrim[pinIdx]);
+				//DEBUGOUT("=");
+				//DEBUGOUT(engVal);
+				if ((inPulseTime[pinIdx] > 2700) || (inPulseTime[pinIdx] < 300)) {
+					inPulseTime[pinIdx] = -1;
+				} else {
+					int engInt = inPulseTime[pinIdx] - servoTrim[pinIdx];
+					if (abs(engInt) > servoDeadZone) {
+						engInt = engInt >> 2; // 0-1000 / 4 ~ 0-255
+						//TODO: motor driver class
+						int pwmChn = MotPWM0+(pinIdx<<1);
+						if (engInt > 0) {
+							pwmChn++;
+						}
+						DEBUGOUT("\n");
+						DEBUGOUT(pinIdx);
+						DEBUGOUT(" E ");
+						DEBUGOUT(pwmChn);
+						DEBUGOUT(" ");
+						DEBUGOUT(engInt);
+						ledcWrite(pwmChn, abs(engInt));
+					}
+				}
+			} 
+		}
+		inPinVal[pinIdx] = newPinVal;
+		if (inPulseStart[pinIdx] < nowus - 21000) {
+			//now pulse in last 20ms period
+			inPulseTime[pinIdx] = -1;
+		}
+	}
 }
