@@ -5,11 +5,10 @@
 #define MotPin1 13  
 #define MotPin2 14  
 #define MotPin3 15  
-#define ServoPin 2  
 #define FlashPin 4
 
-#define MotInLPin 1
-#define MotInRPin 2
+#define MotInRPin GPIO_NUM_2
+#define MotInLPin GPIO_NUM_16
 
 #define MotPWM0 3  
 #define MotPWM1 4  

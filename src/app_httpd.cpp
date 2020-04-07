@@ -1,4 +1,3 @@
-
 #include <esp32-hal-ledc.h>
 int speed = 64;  
 int noStop = 0;
@@ -248,12 +247,6 @@ static esp_err_t cmd_handler(httpd_req_t *req)
     {
       noStop = val;
     }             
-    else if(!strcmp(variable, "servo")) // 3250, 4875, 6500
-    {
-      if      (val > 650) val = 650;
-      else if (val < 325) val = 325;       
-      ledcWrite(FlashPWM,10*val);
-    }     
     else if(!strcmp(variable, "car")) {  
       if (val==1) {
         Serial.println("Forward");
@@ -362,7 +355,6 @@ static const char PROGMEM INDEX_HTML[] = R"rawliteral(
                 <tr><td></td><td align="center"><button id="backward" onclick="fetch(document.location.origin+'/control?var=car&val=5');">Backward</button></td><td></td></tr>
                 <tr><td>Flash</td><td align="center" colspan="2"><input type="range" id="flash" min="0" max="255" value="0" onchange="try{fetch(document.location.origin+'/control?var=flash&val='+this.value);}catch(e){}"></td></tr>
                 <tr><td>Speed</td><td align="center" colspan="2"><input type="range" id="speed" min="0" max="255" value="255" onchange="try{fetch(document.location.origin+'/control?var=speed&val='+this.value);}catch(e){}"></td></tr>
-                <tr><td>Servo</td><td align="center" colspan="2"><input type="range" id="servo" min="325" max="650" value="487" onchange="try{fetch(document.location.origin+'/control?var=servo&val='+this.value);}catch(e){}"></td></tr>
                 <tr><td>Quality</td><td align="center" colspan="2"><input type="range" id="quality" min="10" max="63" value="10" onchange="try{fetch(document.location.origin+'/control?var=quality&val='+this.value);}catch(e){}"></td></tr>
                 <tr><td>Resolution</td><td align="center" colspan="2"><input type="range" id="framesize" min="0" max="6" value="5" onchange="try{fetch(document.location.origin+'/control?var=framesize&val='+this.value);}catch(e){}"></td></tr>
                 </table>
