@@ -8,7 +8,7 @@
 #define FlashPin 4
 
 #define MotInRPin GPIO_NUM_2
-#define MotInLPin GPIO_NUM_16
+#define MotInLPin GPIO_NUM_3
 
 #define MotPWM0 3  
 #define MotPWM1 4  
