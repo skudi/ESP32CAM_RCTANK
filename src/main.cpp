@@ -197,40 +197,55 @@ void setup()
 
 unsigned long nowus = 0;
 unsigned long debugus = 0;
+bool debugon = false;
 
 void loop() {
 	nowus = micros();
 	if (debugus+1000000 < nowus) {
+		debugon = true;
 		debugus = nowus;
+	} else {
+		debugon = false;
+	}
+	if (debugon) {
 		for (uint8_t pinIdx=0; pinIdx<INPINCNT; pinIdx++) {
 			DEBUGOUT("\n");
 			DEBUGOUT(pinIdx);
 			DEBUGOUT(" S ");
+			DEBUGOUT(inputPulses[pinIdx].pin);
+			DEBUGOUT(" ");
 			DEBUGOUT(inputPulses[pinIdx].start);
 			DEBUGOUT(" ");
 			DEBUGOUT(inputPulses[pinIdx].duration);
 		}
-					/*
-		for (uint8_t pinIdx=0; pinIdx<INPINCNT; pinIdx++) {
-			if ((inputPulses[pinIdx].duration < 2700) || (inputPulses[pinIdx].duration > 300)) {
-				int engInt = inputPulses[pinIdx].duration - servoTrim[pinIdx];
-				if (abs(engInt) > servoDeadZone) {
-					engInt = engInt >> 2; // 0-1000 / 4 ~ 0-255
-					//TODO: motor driver class
-					int pwmChn = MotPWM0+(pinIdx<<1);
-					if (engInt > 0) {
-						pwmChn++;
-					}
-					DEBUGOUT("\n");
-					DEBUGOUT(pinIdx);
-					DEBUGOUT(" E ");
-					DEBUGOUT(pwmChn);
-					DEBUGOUT(" ");
-					DEBUGOUT(engInt);
-					ledcWrite(pwmChn, abs(engInt));
-				}
-			}
+	}
+	for (uint8_t pinIdx=0; pinIdx<INPINCNT; pinIdx++) {
+		int pwmChn = MotPWM0+(pinIdx<<1);//select group of two PWM channels by input PIN
+		int engInt = inputPulses[pinIdx].duration - servoTrim[pinIdx];
+		if (engInt > 0) {
+			ledcWrite(pwmChn, 0); //turn off oposite direction
+			pwmChn++;
+		} else {
+			ledcWrite(pwmChn+1, 0); //turn off oposite direction
 		}
-			*/
+		engInt = abs(engInt);
+		if (engInt > servoDeadZone && engInt < 800) {
+			engInt = engInt >> 1; // 0-500 / 2 ~ 0-255
+			if (engInt > 255) {
+				engInt = 255;
+			}
+			//TODO: motor driver class
+		} else {
+			engInt = 0;
+		}
+		ledcWrite(pwmChn, engInt);
+		if (debugon) {
+			DEBUGOUT("\n");
+			DEBUGOUT(pinIdx);
+			DEBUGOUT(" E ");
+			DEBUGOUT(pwmChn);
+			DEBUGOUT(" ");
+			DEBUGOUT(engInt);
+		}
 	}
 }
